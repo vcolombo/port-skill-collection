@@ -53,8 +53,24 @@ Installed skills appear in new sessions after prompt/cache refresh.
 - `skills/port-skill-collection/references/ports-ledger.md` — `ports.yaml` schema and update rules.
 - `skills/port-skill-collection/templates/ports.yaml` — starter ledger template.
 - `skills/port-skill-collection/LICENSE` — license copy included with full-directory installs.
+- `scripts/validate_skill_repo.py` — package validator and Hermes `skills_guard` bridge for CI.
+- `.github/workflows/skill-safety.yml` — GitHub Actions workflow for structure validation, Hermes skill scanning, and Gitleaks secret scanning.
+- `.github/workflows/codeql.yml` — GitHub CodeQL code scanning for repository scripts.
+- `.github/dependabot.yml` — weekly dependency updates for GitHub Actions.
 - `README.md` — this public installation note.
 - `LICENSE` — repository MIT license.
+
+## Automated safety checks
+
+This repository uses GitHub Actions to run:
+
+- Hermes' own skill scanner (`tools.skills_guard`) against the packaged skill directory;
+- repository-specific structure/frontmatter/install-path checks;
+- Gitleaks secret scanning across git history;
+- GitHub CodeQL code scanning for repository scripts;
+- Dependabot updates for GitHub Actions.
+
+These checks complement, but do not replace, GitHub-native repository settings such as secret scanning and branch protection.
 
 ## Public-release hygiene
 
