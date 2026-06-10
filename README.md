@@ -12,6 +12,7 @@ Key safeguards:
 - pin the source repository commit before copying;
 - preserve upstream license/NOTICE files;
 - preserve the original upstream `SKILL.md` as `references/original-SKILL.md`;
+- refresh mode: pull upstream updates via SHA-to-SHA diff and three-way reconcile, preserving local Hermes adaptations instead of clobbering them;
 - hard-gate large collections: if a source has more than 3 skills, inventory first, estimate per-session index cost, and wait for user subset selection before installing;
 - quote YAML date/timestamp-like generated metadata values so `skill_view` serialization does not break.
 
