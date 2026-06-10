@@ -45,6 +45,7 @@ Installed skills appear in new sessions after prompt/cache refresh.
 
 - `SKILL.md` — the Hermes skill.
 - `README.md` — this public installation note.
+- `LICENSE` — MIT license.
 
 ## Public-release hygiene
 
