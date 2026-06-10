@@ -17,12 +17,20 @@ Key safeguards:
 
 ## Install into Hermes
 
-Copy this directory into an active Hermes profile skills root, for example:
+Install directly from GitHub:
 
 ```bash
-export HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
-mkdir -p "$HERMES_HOME/skills/migration/port-skill-collection"
-cp SKILL.md "$HERMES_HOME/skills/migration/port-skill-collection/SKILL.md"
+hermes skills install https://raw.githubusercontent.com/vcolombo/port-skill-collection/main/SKILL.md
+```
+
+### Offline fallback: manual copy for offline/air-gapped installs
+
+If the machine cannot reach GitHub, derive the skills root from the Hermes runtime instead of guessing from `$HOME`:
+
+```bash
+# Offline fallback: derive the skills root from the runtime, not from $HOME
+hermes profile show default   # note the "Path:" line — skills live at <Path>/skills
+cp -r . "<Path>/skills/migration/port-skill-collection/"
 ```
 
 Then verify in a fresh Hermes process/session:
