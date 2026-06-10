@@ -92,10 +92,17 @@ def validate_skill() -> None:
             fail(f"SKILL.md missing expected phrase: {phrase}")
 
 
-def get_latest_version_tag() -> str | None:
+def parse_semver(value: object) -> tuple[int, int, int] | None:
+    match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", str(value))
+    if match is None:
+        return None
+    return tuple(int(part) for part in match.groups())
+
+
+def get_highest_version_tag() -> str | None:
     try:
         result = subprocess.run(
-            ["git", "describe", "--tags", "--abbrev=0"],
+            ["git", "tag", "--list", "v[0-9]*.[0-9]*.[0-9]*"],
             cwd=ROOT,
             check=True,
             capture_output=True,
@@ -103,12 +110,16 @@ def get_latest_version_tag() -> str | None:
         )
     except subprocess.CalledProcessError:
         return None
-    tag = result.stdout.strip()
-    return tag or None
+    tags = [tag.strip() for tag in result.stdout.splitlines() if tag.strip()]
+    parsed = [(parse_semver(tag), tag) for tag in tags]
+    valid = [(version, tag) for version, tag in parsed if version is not None]
+    if not valid:
+        return None
+    return max(valid, key=lambda item: item[0])[1]
 
 
 def validate_skill_version_bump() -> None:
-    tag = get_latest_version_tag()
+    tag = get_highest_version_tag()
     if tag is None:
         print("No version tag found; skipping SKILL.md version-bump check")
         return
@@ -138,7 +149,11 @@ def validate_skill_version_bump() -> None:
     finally:
         tagged_tmp.unlink(missing_ok=True)
 
-    if str(current_version) == str(tagged_version):
+    current_semver = parse_semver(current_version)
+    tagged_semver = parse_semver(tagged_version)
+    if current_semver is None or tagged_semver is None:
+        fail("SKILL.md version must be semver-like, e.g. 2.2.0")
+    if current_semver <= tagged_semver:
         fail("SKILL.md changed without a version bump.")
     print(f"SKILL.md version-bump check: changed since {tag}; version {tagged_version} -> {current_version}")
 
