@@ -30,7 +30,8 @@ If the machine cannot reach GitHub, derive the skills root from the Hermes runti
 ```bash
 # Offline fallback: derive the skills root from the runtime, not from $HOME
 hermes profile show default   # note the "Path:" line — skills live at <Path>/skills
-cp -r . "<Path>/skills/migration/port-skill-collection/"
+mkdir -p "<Path>/skills/migration/port-skill-collection"
+cp SKILL.md LICENSE "<Path>/skills/migration/port-skill-collection/"
 ```
 
 Then verify in a fresh Hermes process/session:
