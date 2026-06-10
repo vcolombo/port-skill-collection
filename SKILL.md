@@ -1,7 +1,7 @@
 ---
 name: port-skill-collection
 description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, or "porting" existing skills from Claude Code, Codex, Cursor, OpenCode, or any agentskills-style repo — e.g. "port this skill repo into Hermes", "add the skills from github.com/x/y". For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing ones.
-version: 2.1.0
+version: 2.1.1
 metadata:
   hermes:
     tags: [skills, migration, claude-code, setup]
@@ -65,7 +65,7 @@ Use this mode when the source repository is already cloned/ported and the user w
    ```
 3. **Map upstream changes to installed skills.** Only refresh installed skills whose recorded source path changed, or whose copied support files changed. If the source repo changed unrelated skills, report them as unchanged/not installed and do not run compatibility work on them.
 4. **Reconcile; never clobber adaptations.** Treat the installed adapted `SKILL.md` as the source of truth for Hermes behavior. Compare three things: previous upstream baseline (`references/original-SKILL.md` or the pinned SHA), new upstream file at `<new-sha>`, and the current adapted Hermes `SKILL.md`. Apply upstream content changes into the adapted file manually or with a three-way merge. Do **not** replace the adapted file wholesale with upstream, because that destroys Hermes rewrites, frontmatter, trigger wording, local references, and compatibility notes.
-5. **Preserve old and new upstream baselines.** Before updating `references/original-SKILL.md`, save the old baseline as `references/original-SKILL.<pinned-sha>.md` or an equivalent dated backup. Then store the new unmodified upstream `SKILL.md` as `references/original-SKILL.md` so future refreshes have a clean baseline. Preserve upstream license/NOTICE files as before.
+5. **Preserve old and new upstream baselines.** Before updating `references/original-SKILL.md`, save the old baseline as `references/original-SKILL.<short-pinned-sha>.md` or an equivalent dated backup. Use a short SHA such as `git rev-parse --short <pinned-sha>` so filenames stay readable. Then store the new unmodified upstream `SKILL.md` as `references/original-SKILL.md` so future refreshes have a clean baseline. Preserve upstream license/NOTICE files as before.
 6. **Refresh support files deliberately.** For scripts/templates/references/assets copied from upstream, diff each changed file. Update only files that came from upstream and keep backups or conflict notes for locally modified support files. Never delete local support files just because upstream removed or rearranged them without telling the user.
 7. **Run the compatibility pass only on changed installed skills.** Re-check frontmatter, YAML scalar quoting, Claude/tool references, missing CLIs/MCPs/credentials, and support-file paths only for skills touched by the upstream diff.
 8. **Update provenance after verification.** Only after the adapted skill parses and verifies, update its pinned source SHA/provenance to `<new-sha>`. If reconciliation is incomplete, leave the old pinned SHA in place and report the blocker.
