@@ -1,6 +1,6 @@
 ---
 name: port-skill-collection
-description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, or "porting" skills from Claude Code, Codex, Cursor, OpenCode, or any agentskills-style repo.
+description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, or "porting" existing skills from Claude Code, Codex, Cursor, OpenCode, or any agentskills-style repo — e.g. "port this skill repo into Hermes", "add the skills from github.com/x/y". For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing ones.
 version: 1.0.0
 metadata:
   hermes:
