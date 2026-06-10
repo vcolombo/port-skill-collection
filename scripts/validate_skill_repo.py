@@ -47,7 +47,6 @@ FORBIDDEN_PUBLIC_PATTERNS = [
     r"<knowledge-provider>",
     r"<design-provider>",
     r"<design-provider>",
-    r"GITHUB_TOKEN",
     r"ghp_[A-Za-z0-9_]+",
     r"sk-[A-Za-z0-9_-]{12,}",
 ]

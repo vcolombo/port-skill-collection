@@ -27,6 +27,8 @@ hermes skills install vcolombo/port-skill-collection/skills/port-skill-collectio
 
 Why not a raw `SKILL.md` URL? This skill now ships support files under `references/` and `templates/`. Hermes can install those support files from a GitHub skill-directory identifier, but a raw `SKILL.md` URL installs only that single file.
 
+If GitHub's unauthenticated API limit is exhausted during install, authenticate first (`gh auth login`) or provide `GITHUB_TOKEN`/`GH_TOKEN` in the Hermes runtime environment, then rerun the same install command.
+
 ### Offline fallback: manual copy for offline/air-gapped installs
 
 If the machine cannot reach GitHub, derive the skills root from the Hermes runtime instead of guessing from `$HOME`:
