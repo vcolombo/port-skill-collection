@@ -139,8 +139,10 @@ def iter_scanned_files() -> list[Path]:
 
 def scan_public_strings() -> None:
     files = [p for p in iter_scanned_files() if p.is_file()]
+    private_patterns = load_private_scrub_patterns()
+    print(f"Private scrub patterns loaded: {len(private_patterns)}")
     pattern_sources: list[tuple[str, str]] = [(p, "generic") for p in GENERIC_FORBIDDEN_PUBLIC_PATTERNS]
-    pattern_sources.extend((p, "private") for p in load_private_scrub_patterns())
+    pattern_sources.extend((p, "private") for p in private_patterns)
 
     findings: list[str] = []
     for path in files:

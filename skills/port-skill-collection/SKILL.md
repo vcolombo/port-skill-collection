@@ -118,7 +118,6 @@ Read `references/refresh-mode.md` before doing refresh work.
 - For public skill repositories, add CI safety gates before relying on the repo as an install source: repository-specific structure/frontmatter validation, Hermes `tools.skills_guard` scanning, secret scanning such as Gitleaks, GitHub CodeQL when scripts are present, and Dependabot for GitHub Actions updates. GitHub has useful code/secret/dependency scanners, but no Hermes-skill-specific native scanner; use Hermes' scanner in Actions for that layer.
 - Keep public-facing repositories generic: remove deployment-specific paths, personal names, hostnames, private project names, chat-thread details, and private operational notes.
 - Before making a repo public, scan the working tree and reachable Git history for internal strings or credential patterns.
-- Never embed private scrub terms in a public validator; the denylist is itself a disclosure. Source private scrub regexes from CI secrets and redact private-pattern names in failure logs.
 
 ## Pitfalls
 
