@@ -34,22 +34,14 @@ REQUIRED_FILES = [
     SKILL_DIR / "templates" / "ports.yaml",
 ]
 EXPECTED_INSTALL = "hermes skills install vcolombo/port-skill-collection/skills/port-skill-collection --category migration"
-FORBIDDEN_PUBLIC_PATTERNS = [
-    r"<runtime-data-dir>",
-    r"<runtime-install-dir>",
-    r"<person>",
-    r"<operator-profile>",
-    r"<messaging-platform>",
-    r"<commerce-platform>",
-    r"<project-name>",
-    r"<hosting-provider>",
-    r"<memory-provider>",
-    r"<knowledge-provider>",
-    r"<design-provider>",
-    r"<design-provider>",
+GENERIC_FORBIDDEN_PUBLIC_PATTERNS = [
     r"ghp_[A-Za-z0-9_]+",
     r"sk-[A-Za-z0-9_-]{12,}",
+    r"AKIA[0-9A-Z]{16}",
+    r"ASIA[0-9A-Z]{16}",
+    r"AIza[0-9A-Za-z_-]{35}",
 ]
+PRIVATE_SCRUB_PATTERNS_ENV = "PRIVATE_SCRUB_PATTERNS"
 
 
 def fail(message: str) -> None:
@@ -126,14 +118,39 @@ def validate_ports_template() -> None:
         fail(f"templates/ports.yaml first port missing keys: {sorted(missing)}")
 
 
+def load_private_scrub_patterns() -> list[str]:
+    raw = os.environ.get(PRIVATE_SCRUB_PATTERNS_ENV, "")
+    return [line.strip() for line in raw.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+
+
+def iter_scanned_files() -> list[Path]:
+    try:
+        result = subprocess.run(
+            ["git", "ls-files"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return [ROOT / line for line in result.stdout.splitlines() if line]
+    except Exception:
+        return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
+
+
 def scan_public_strings() -> None:
-    files = [p for p in [README, ROOT / "LICENSE", *SKILL_DIR.rglob("*")] if p.is_file()]
+    files = [p for p in iter_scanned_files() if p.is_file()]
+    pattern_sources: list[tuple[str, str]] = [(p, "generic") for p in GENERIC_FORBIDDEN_PUBLIC_PATTERNS]
+    pattern_sources.extend((p, "private") for p in load_private_scrub_patterns())
+
     findings: list[str] = []
     for path in files:
         text = path.read_text(encoding="utf-8", errors="ignore")
-        for pattern in FORBIDDEN_PUBLIC_PATTERNS:
+        for pattern, source in pattern_sources:
             if re.search(pattern, text):
-                findings.append(f"{path.relative_to(ROOT)} matched {pattern!r}")
+                if source == "private":
+                    findings.append(f"{path.relative_to(ROOT)} matched private scrub pattern [redacted]")
+                else:
+                    findings.append(f"{path.relative_to(ROOT)} matched {pattern!r}")
     if findings:
         fail("public scrub scan failed:\n" + "\n".join(findings))
 

@@ -1,7 +1,7 @@
 ---
 name: port-skill-collection
 description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, refreshing, or auditing existing skills from Claude Code, Codex, Cursor, OpenCode, or agentskills-style repos — e.g. "port this skill repo into Hermes", "add the skills from github.com/x/y", "refresh the ported skills from upstream", or "audit this skill collection before install". For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing ones.
-version: 2.2.2
+version: 2.2.3
 author: vcolombo + Hermes Agent
 license: MIT
 metadata:
@@ -118,6 +118,7 @@ Read `references/refresh-mode.md` before doing refresh work.
 - For public skill repositories, add CI safety gates before relying on the repo as an install source: repository-specific structure/frontmatter validation, Hermes `tools.skills_guard` scanning, secret scanning such as Gitleaks, GitHub CodeQL when scripts are present, and Dependabot for GitHub Actions updates. GitHub has useful code/secret/dependency scanners, but no Hermes-skill-specific native scanner; use Hermes' scanner in Actions for that layer.
 - Keep public-facing repositories generic: remove deployment-specific paths, personal names, hostnames, private project names, chat-thread details, and private operational notes.
 - Before making a repo public, scan the working tree and reachable Git history for internal strings or credential patterns.
+- Never embed private scrub terms in a public validator; the denylist is itself a disclosure. Source private scrub regexes from CI secrets and redact private-pattern names in failure logs.
 
 ## Pitfalls
 
@@ -130,6 +131,7 @@ Read `references/refresh-mode.md` before doing refresh work.
 - In containerized runtimes, confirm the resolved active-profile skills directory is on persistent storage before installing. A persistent source checkout does not protect copied skills if the install destination lives on an ephemeral image layer.
 - GitHub API rate limits and web `tree/` pages can break source acquisition. Authenticate repeated GitHub requests and clone/fetch repositories instead of scraping `tree/` URLs.
 - Do not enable optional shell-execution features just because a ported skill contains shell snippets; surface that to the user as a trust decision.
+- Never embed private scrub terms in a public validator; the denylist is itself a disclosure. Source them from CI secrets and make failure output say only that a private pattern matched.
 - Do not split this skill's future critical workflow docs into support files unless the documented install path fetches a full skill directory.
 
 ## Done means

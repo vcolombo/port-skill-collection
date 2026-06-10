@@ -34,6 +34,7 @@ jobs:
       - name: Run package validator and Hermes skill scanner
         env:
           HERMES_AGENT_SOURCE: ${{ github.workspace }}/.ci/hermes-agent
+          PRIVATE_SCRUB_PATTERNS: ${{ secrets.PRIVATE_SCRUB_PATTERNS }}
         run: python scripts/validate_skill_repo.py
 
   gitleaks:
