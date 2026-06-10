@@ -1,7 +1,7 @@
 ---
 name: port-skill-collection
-description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, refreshing, or auditing existing skills from Claude Code, Codex, Cursor, OpenCode, or agentskills-style repos. For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing skills.
-version: 2.2.1
+description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, refreshing, or auditing existing skills from Claude Code, Codex, Cursor, OpenCode, or agentskills-style repos — e.g. "port this skill repo into Hermes", "add the skills from github.com/x/y", "refresh the ported skills from upstream", or "audit this skill collection before install". For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing ones.
+version: 2.2.2
 author: Hermes Agent
 license: MIT
 metadata:
@@ -121,11 +121,15 @@ Read `references/refresh-mode.md` before doing refresh work.
 
 ## Pitfalls
 
+- Do not trim the example trigger phrases or the skill-creator disambiguation from this skill's own description; they exist because this skill previously lost trigger matches to neighboring authoring skills.
 - Do not skip commit pinning because the source repo is "latest" or small. Without a SHA, refresh mode cannot distinguish upstream drift from local adaptation.
 - Do not refresh by copying upstream over the adapted Hermes skill. Diff pinned SHA to new SHA and reconcile changes into local adaptations.
 - Do not drop license/NOTICE files or original upstream `SKILL.md`; provenance is part of the install.
 - Do not let `ports.yaml` become optional paperwork. Manual-copy ports need it because hub update metadata is unavailable.
 - Do not use shell `~` as a proxy for Hermes home. `HOME`, `HERMES_HOME`, active profile home, and persisted volume paths may differ.
+- In containerized runtimes, confirm the resolved active-profile skills directory is on persistent storage before installing. A persistent source checkout does not protect copied skills if the install destination lives on an ephemeral image layer.
+- GitHub API rate limits and web `tree/` pages can break source acquisition. Authenticate repeated GitHub requests and clone/fetch repositories instead of scraping `tree/` URLs.
+- Do not enable optional shell-execution features just because a ported skill contains shell snippets; surface that to the user as a trust decision.
 - Do not split this skill's future critical workflow docs into support files unless the documented install path fetches a full skill directory.
 
 ## Done means
