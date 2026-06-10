@@ -31,6 +31,8 @@ REQUIRED_FILES = [
     SKILL_DIR / "LICENSE",
     SKILL_DIR / "references" / "ports-ledger.md",
     SKILL_DIR / "references" / "refresh-mode.md",
+    SKILL_DIR / "references" / "public-repo-privacy-scrub.md",
+    SKILL_DIR / "references" / "public-skill-release-gates.md",
     SKILL_DIR / "templates" / "ports.yaml",
 ]
 EXPECTED_INSTALL = "hermes skills install vcolombo/port-skill-collection/skills/port-skill-collection --category migration"
@@ -118,14 +120,48 @@ def get_highest_version_tag() -> str | None:
     return max(valid, key=lambda item: item[0])[1]
 
 
-def validate_skill_version_bump() -> None:
-    tag = get_highest_version_tag()
-    if tag is None:
-        print("No version tag found; skipping SKILL.md version-bump check")
-        return
+def skill_package_changed_since_tag(tag: str) -> bool | None:
+    """Return whether the installable skill directory differs from tag.
+
+    None means the tag predates the directory layout and cannot serve as a
+    baseline. We compare the whole package, not only SKILL.md, because
+    references/templates/scripts/assets are part of what users install.
+    """
+    skill_dir_relpath = SKILL_DIR.relative_to(ROOT).as_posix()
+    try:
+        subprocess.run(
+            ["git", "cat-file", "-e", f"{tag}:{skill_dir_relpath}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError:
+        print(f"Tag {tag} has no {skill_dir_relpath}; skipping skill package version-bump check")
+        return None
+
+    diff = subprocess.run(
+        ["git", "diff", "--quiet", tag, "--", skill_dir_relpath],
+        cwd=ROOT,
+        check=False,
+    )
+    if diff.returncode not in {0, 1}:
+        fail(f"git diff failed while comparing {skill_dir_relpath} to {tag}")
+
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "--", skill_dir_relpath],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return diff.returncode == 1 or bool(untracked)
+
+
+def read_tagged_skill_version(tag: str) -> object:
     skill_relpath = SKILL_MD.relative_to(ROOT).as_posix()
     try:
-        tagged = subprocess.run(
+        tagged_skill_md = subprocess.run(
             ["git", "show", f"{tag}:{skill_relpath}"],
             cwd=ROOT,
             check=True,
@@ -133,29 +169,39 @@ def validate_skill_version_bump() -> None:
             text=True,
         ).stdout
     except subprocess.CalledProcessError:
-        print(f"Tag {tag} has no {skill_relpath}; skipping SKILL.md version-bump check")
-        return
+        fail(f"Tag {tag} has no {skill_relpath}; cannot compare package version")
+        raise AssertionError("unreachable")
 
-    current = SKILL_MD.read_text(encoding="utf-8")
-    if current == tagged:
-        print(f"SKILL.md version-bump check: unchanged since {tag}")
-        return
-
-    current_version = parse_frontmatter(SKILL_MD)[0].get("version")
     tagged_tmp = ROOT / ".skill-md-tagged.tmp"
     try:
-        tagged_tmp.write_text(tagged, encoding="utf-8")
-        tagged_version = parse_frontmatter(tagged_tmp)[0].get("version")
+        tagged_tmp.write_text(tagged_skill_md, encoding="utf-8")
+        return parse_frontmatter(tagged_tmp)[0].get("version")
     finally:
         tagged_tmp.unlink(missing_ok=True)
 
+
+def validate_skill_version_bump() -> None:
+    tag = get_highest_version_tag()
+    if tag is None:
+        print("No version tag found; skipping skill package version-bump check")
+        return
+
+    changed = skill_package_changed_since_tag(tag)
+    if changed is None:
+        return
+    if not changed:
+        print(f"Skill package version-bump check: unchanged since {tag}")
+        return
+
+    current_version = parse_frontmatter(SKILL_MD)[0].get("version")
+    tagged_version = read_tagged_skill_version(tag)
     current_semver = parse_semver(current_version)
     tagged_semver = parse_semver(tagged_version)
     if current_semver is None or tagged_semver is None:
         fail("SKILL.md version must be semver-like, e.g. 2.2.0")
     if current_semver <= tagged_semver:
-        fail("SKILL.md changed without a version bump.")
-    print(f"SKILL.md version-bump check: changed since {tag}; version {tagged_version} -> {current_version}")
+        fail("Skill package changed without a version bump.")
+    print(f"Skill package version-bump check: changed since {tag}; version {tagged_version} -> {current_version}")
 
 
 def validate_readme() -> None:
