@@ -92,6 +92,57 @@ def validate_skill() -> None:
             fail(f"SKILL.md missing expected phrase: {phrase}")
 
 
+def get_latest_version_tag() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError:
+        return None
+    tag = result.stdout.strip()
+    return tag or None
+
+
+def validate_skill_version_bump() -> None:
+    tag = get_latest_version_tag()
+    if tag is None:
+        print("No version tag found; skipping SKILL.md version-bump check")
+        return
+    skill_relpath = SKILL_MD.relative_to(ROOT).as_posix()
+    try:
+        tagged = subprocess.run(
+            ["git", "show", f"{tag}:{skill_relpath}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except subprocess.CalledProcessError:
+        print(f"Tag {tag} has no {skill_relpath}; skipping SKILL.md version-bump check")
+        return
+
+    current = SKILL_MD.read_text(encoding="utf-8")
+    if current == tagged:
+        print(f"SKILL.md version-bump check: unchanged since {tag}")
+        return
+
+    current_version = parse_frontmatter(SKILL_MD)[0].get("version")
+    tagged_tmp = ROOT / ".skill-md-tagged.tmp"
+    try:
+        tagged_tmp.write_text(tagged, encoding="utf-8")
+        tagged_version = parse_frontmatter(tagged_tmp)[0].get("version")
+    finally:
+        tagged_tmp.unlink(missing_ok=True)
+
+    if str(current_version) == str(tagged_version):
+        fail("SKILL.md changed without a version bump.")
+    print(f"SKILL.md version-bump check: changed since {tag}; version {tagged_version} -> {current_version}")
+
+
 def validate_readme() -> None:
     text = README.read_text(encoding="utf-8")
     if EXPECTED_INSTALL not in text:
@@ -183,6 +234,7 @@ if not allowed:
 def main() -> None:
     validate_structure()
     validate_skill()
+    validate_skill_version_bump()
     validate_readme()
     validate_ports_template()
     scan_public_strings()
