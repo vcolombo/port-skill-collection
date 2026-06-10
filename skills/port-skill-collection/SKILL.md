@@ -1,7 +1,7 @@
 ---
 name: port-skill-collection
 description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, refreshing, or auditing existing skills from Claude Code, Codex, Cursor, OpenCode, or agentskills-style repos. For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing skills.
-version: 2.2.0
+version: 2.2.1
 author: Hermes Agent
 license: MIT
 metadata:
@@ -115,6 +115,7 @@ Read `references/refresh-mode.md` before doing refresh work.
   hermes skills install owner/repo/skills/<skill-name>
   ```
 - Raw `SKILL.md` URLs install only that one file and cannot bring support files. Do not split critical instructions into `references/` while advertising only a raw-file install path.
+- For public skill repositories, add CI safety gates before relying on the repo as an install source: repository-specific structure/frontmatter validation, Hermes `tools.skills_guard` scanning, secret scanning such as Gitleaks, GitHub CodeQL when scripts are present, and Dependabot for GitHub Actions updates. GitHub has useful code/secret/dependency scanners, but no Hermes-skill-specific native scanner; use Hermes' scanner in Actions for that layer.
 - Keep public-facing repositories generic: remove deployment-specific paths, personal names, hostnames, private project names, chat-thread details, and private operational notes.
 - Before making a repo public, scan the working tree and reachable Git history for internal strings or credential patterns.
 
