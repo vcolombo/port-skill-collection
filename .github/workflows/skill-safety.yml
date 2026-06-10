@@ -1,0 +1,51 @@
+name: Skill Safety
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-skill-package:
+    name: Validate Hermes skill package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator dependencies
+        run: python -m pip install --upgrade pip PyYAML rich
+
+      - name: Check out Hermes Agent scanner
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          path: .ci/hermes-agent
+
+      - name: Run package validator and Hermes skill scanner
+        env:
+          HERMES_AGENT_SOURCE: ${{ github.workspace }}/.ci/hermes-agent
+        run: python scripts/validate_skill_repo.py
+
+  gitleaks:
+    name: Secret scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
