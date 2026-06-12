@@ -29,19 +29,25 @@ REQUIRED_FILES = [
     README,
     SKILL_MD,
     SKILL_DIR / "LICENSE",
+    SKILL_DIR / "references" / "hermeshub-publishing.md",
     SKILL_DIR / "references" / "ports-ledger.md",
-    SKILL_DIR / "references" / "refresh-mode.md",
+    SKILL_DIR / "references" / "private-custom-skill-repos.md",
     SKILL_DIR / "references" / "public-repo-privacy-scrub.md",
     SKILL_DIR / "references" / "public-skill-release-gates.md",
+    SKILL_DIR / "references" / "refresh-mode.md",
     SKILL_DIR / "templates" / "ports.yaml",
 ]
 EXPECTED_INSTALL = "hermes skills install vcolombo/port-skill-collection/skills/port-skill-collection --category migration"
 GENERIC_FORBIDDEN_PUBLIC_PATTERNS = [
     r"ghp_[A-Za-z0-9_]+",
+    r"github_pat_[A-Za-z0-9_]{20,}",
+    r"gh[osur]_[A-Za-z0-9]{36}",
     r"sk-[A-Za-z0-9_-]{12,}",
     r"AKIA[0-9A-Z]{16}",
     r"ASIA[0-9A-Z]{16}",
     r"AIza[0-9A-Za-z_-]{35}",
+    r"xox[baprs]-[A-Za-z0-9-]{10,}",
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
 ]
 PRIVATE_SCRUB_PATTERNS_ENV = "PRIVATE_SCRUB_PATTERNS"
 
@@ -204,6 +210,25 @@ def validate_skill_version_bump() -> None:
     print(f"Skill package version-bump check: changed since {tag}; version {tagged_version} -> {current_version}")
 
 
+def validate_reference_links() -> None:
+    """Every references/<file>.md mentioned in SKILL.md must exist, and vice versa.
+
+    Hard-coded REQUIRED_FILES rots when references are added; this check is the
+    durable invariant: the body and the shipped support files agree.
+    """
+    _, body = parse_frontmatter(SKILL_MD)
+    mentioned = set(re.findall(r"references/[A-Za-z0-9_.-]+\.md", body))
+    mentioned.discard("references/original-SKILL.md")  # install-time artifact, not shipped
+    refs_dir = SKILL_DIR / "references"
+    shipped = {f"references/{p.name}" for p in refs_dir.glob("*.md")} if refs_dir.is_dir() else set()
+    dead = sorted(m for m in mentioned if not (SKILL_DIR / m).is_file())
+    if dead:
+        fail("SKILL.md links reference files that do not exist: " + ", ".join(dead))
+    orphans = sorted(shipped - mentioned)
+    if orphans:
+        print(f"WARNING: shipped reference files never mentioned in SKILL.md: {', '.join(orphans)}")
+
+
 def validate_readme() -> None:
     text = README.read_text(encoding="utf-8")
     if EXPECTED_INSTALL not in text:
@@ -228,6 +253,14 @@ def validate_ports_template() -> None:
     missing = required - set(ports[0])
     if missing:
         fail(f"templates/ports.yaml first port missing keys: {sorted(missing)}")
+    skills = ports[0].get("skills")
+    if not isinstance(skills, list) or not skills or not isinstance(skills[0], dict):
+        fail("templates/ports.yaml first port must contain a non-empty skills list of mappings")
+        raise AssertionError("unreachable")
+    skill_required = {"name", "category", "source_path", "installed_path", "original_skill_path", "support_files", "notes"}
+    skill_missing = skill_required - set(skills[0])
+    if skill_missing:
+        fail(f"templates/ports.yaml first skill missing keys: {sorted(skill_missing)}")
 
 
 def load_private_scrub_patterns() -> list[str]:
@@ -246,7 +279,11 @@ def iter_scanned_files() -> list[Path]:
         )
         return [ROOT / line for line in result.stdout.splitlines() if line]
     except Exception:
-        return [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
+        return [
+            p
+            for p in ROOT.rglob("*")
+            if p.is_file() and not {".git", ".ci"} & set(p.parts)
+        ]
 
 
 def scan_public_strings() -> None:
@@ -289,13 +326,17 @@ print(reason)
 if not allowed:
     raise SystemExit(1)
 """
-    subprocess.run([sys.executable, "-c", code], check=True)
+    try:
+        subprocess.run([sys.executable, "-c", code], check=True)
+    except subprocess.CalledProcessError:
+        fail("Hermes skills_guard scan failed or blocked install; see scanner report above")
 
 
 def main() -> None:
     validate_structure()
     validate_skill()
     validate_skill_version_bump()
+    validate_reference_links()
     validate_readme()
     validate_ports_template()
     scan_public_strings()

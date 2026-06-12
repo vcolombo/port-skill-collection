@@ -4,12 +4,12 @@ Use this when the user wants locally maintained Hermes skills committed to priva
 
 ## Classification workflow
 
-1. Inventory installed skills from the active skills root (`<active-skills-root>` in the active container). For each `SKILL.md`, capture relative path, `name`, `description`, `version`, `author`, file count, and bytes.
+1. Inventory installed skills from the resolved active skills root (derive it from the active profile/runtime; never hardcode a deployment path). For each `SKILL.md`, capture relative path, `name`, `description`, `version`, `author`, file count, and bytes.
 2. Exclude skills that already have a source repo or are known external installs:
    - Hermes Hub lock metadata under `.hub/lock.json` marks hub-installed skills.
    - Existing checked-out source repos/remotes should be treated as already-covered.
    - Known external collections such as `claude-superpowers` and `hashicorp/terraform` should not be re-published as “ours”.
-3. Include only skills with local/custom operational signals: project names, user/operator procedures, profile/gateway/cron/Kanban/Hindsight/MCP deployment knowledge, or locally adapted runbooks not represented by another repo.
+3. Include only skills with local/custom operational signals: private project names, user/operator procedures, deployment-specific knowledge (profiles, gateways, schedulers, task boards, memory/MCP wiring), or locally adapted runbooks not represented by another repo.
 4. Keep classification evidence in a JSON report. Do not rely on the final repo list alone; future cleanup depends on knowing why a skill was included or excluded.
 
 ## Repository shape
@@ -45,7 +45,7 @@ Before `gh repo create --private --source ... --push`, run staged/working-tree c
 After push, verify each repo:
 
 ```bash
-gh repo view vcolombo/<repo> --json visibility,defaultBranchRef,pushedAt
+gh repo view <owner>/<repo> --json visibility,defaultBranchRef,pushedAt
 
 git -C <persistent-home>/skill-repos/<repo> status --short --branch
 ```

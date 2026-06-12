@@ -1,7 +1,7 @@
 ---
 name: port-skill-collection
-description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, refreshing, or auditing existing skills from Claude Code, Codex, Cursor, OpenCode, or agentskills-style repos — e.g. "port this skill repo into Hermes", "add the skills from github.com/x/y", "refresh the ported skills from upstream", or "audit this skill collection before install". For authoring new skills from scratch, use skill-creator instead; this skill is only for migrating existing ones.
-version: 2.2.9
+description: Port a Claude Code plugin or external skill collection (a GitHub repo of SKILL.md directories) into Hermes Agent. Use when installing, importing, adapting, refreshing, or auditing existing skills from Claude Code, Codex, Cursor, OpenCode, or agentskills-style repos — e.g. "port this skill repo into Hermes", "add the skills from github.com/x/y", "refresh the ported skills from upstream", or "audit this skill collection before install". For authoring new skills from scratch, use skill-creator instead; this skill migrates existing ones. Also use when publishing a ported or locally maintained skill — "publish this skill to the Hermes Skill Hub / HermesHub", "create a private repo for my custom skills", or "add CI/release safety gates to my public skill repo".
+version: 2.3.0
 author: vcolombo + Hermes Agent
 license: MIT
 metadata:
@@ -104,29 +104,21 @@ Use refresh mode when the source repository has moved and the user wants to pull
 
 Read `references/refresh-mode.md` before doing refresh work.
 
-## Publishing this skill or a ported skill to GitHub
+## Publishing this skill or a ported skill
 
-For private repositories for locally maintained/custom skills, use `references/private-custom-skill-repos.md`: classify hub/external vs local skills, copy each selected skill into a dedicated private repo, run size/secret checks, push, verify private visibility, and update the config repo with an inventory rather than duplicating full skill source.
+Read the matching reference before acting; each holds the full workflow:
 
-- Prefer a real skill directory layout when a skill has support files:
-  ```text
-  skills/<skill-name>/SKILL.md
-  skills/<skill-name>/references/...
-  ```
-- Install full-directory skills with a GitHub identifier such as:
-  ```bash
-  hermes skills install owner/repo/skills/<skill-name>
-  ```
-- Raw `SKILL.md` URLs install only that one file and cannot bring support files. Do not split critical instructions into `references/` while advertising only a raw-file install path.
-- Treat user-approved drafts as pre-publish gates, not post-publish cleanup. Before creating/pushing/tagging a skill repo, complete any requested validator shape, trigger tests, ledger fields, canonical links, and wording changes. If you accidentally published too early, say so plainly, fix the package, and only move an initial release tag after explicit approval.
-- Repository validators should check durable invariants rather than one-off pinned values. Prefer checks like: frontmatter parses; name/description exist; version is semver; protected anchors remain; forbidden broad tags are absent; `source_commit` is a valid SHA; the release ledger has a row matching current version/source commit; required reference files and safety phrases exist. Avoid validators that only pass one hard-coded release version or commit unless the point is to validate an immutable archived artifact.
-- For trigger verification, show both positive and negative evidence. Run at least one natural anchor phrase that should select the skill and one near-miss from an adjacent domain that must not select it; do not count a forced `--skills <name>` load as trigger-selection proof.
-- For public skill repositories, add CI safety gates before relying on the repo as an install source: repository-specific structure/frontmatter validation, Hermes `tools.skills_guard` scanning, secret scanning such as Gitleaks, GitHub CodeQL when scripts are present, and Dependabot for GitHub Actions updates. GitHub has useful code/secret/dependency scanners, but no Hermes-skill-specific native scanner; use Hermes' scanner in Actions for that layer.
-- Add a full skill-package version-bump gate for public releases: with full tag history (`fetch-depth: 0`), compare the working-tree installable directory (`skills/<skill-name>/`) to the same directory at the semver-highest release tag, and if any packaged file changed require the current `version:` to be greater than the tagged version. See `references/public-skill-release-gates.md`.
-- Keep public-facing repositories generic: remove deployment-specific paths, personal names, hostnames, private project names, chat-thread details, and private operational notes.
-- Before making a repo public, scan the working tree and reachable Git history for internal strings or credential patterns.
-- For public-repo privacy scrub CI, keep private denylist terms out of the repo, source them from CI secrets, print `Private scrub patterns loaded: N`, and redact private-match details. See `references/public-repo-privacy-scrub.md`.
-- For Hermes Skill Hub / HermesHub publication, submit the complete skill directory to the Hub/listing path (`skills/<skill-name>/`) via `hermes skills publish <skill-dir> --to github --repo amanning3390/hermeshub` or an equivalent Hub PR. Do **not** substitute `NousResearch/hermes-agent/optional-skills/` unless the user explicitly asks for official optional/bundled inclusion. See `references/hermeshub-publishing.md`.
+- **Private repos for locally maintained skills:** classify hub/external vs local skills, one private repo per selected skill, size/secret checks before push, verify private visibility, and give the config backup repo an inventory rather than duplicated skill source. See `references/private-custom-skill-repos.md`.
+- **Public repo shape:** ship a full skill directory (`skills/<skill-name>/SKILL.md` plus `references/`, `templates/`, `scripts/`, `assets/`) and advertise the directory install identifier (`hermes skills install owner/repo/skills/<skill-name>`). Raw `SKILL.md` URLs install one file and cannot bring support files; never split critical instructions into `references/` while advertising a raw-file install path.
+- **CI safety gates for public install sources:** structure/frontmatter validation, Hermes `tools.skills_guard` scanning in Actions (GitHub has no Hermes-skill-aware native scanner), Gitleaks, CodeQL when scripts exist, Dependabot, a privacy scrub fed from CI secrets, and a full skill-package version-bump gate against the semver-highest tag with `fetch-depth: 0`. See `references/public-skill-release-gates.md` and `references/public-repo-privacy-scrub.md`.
+- **Hub listing:** "Hermes Skill Hub" / "HermesHub" means the Hub repo and listing path (`amanning3390/hermeshub` at time of writing), submitted via `hermes skills publish <skill-dir> --to github --repo amanning3390/hermeshub` or an equivalent PR — not `NousResearch/hermes-agent` optional/bundled inclusion. See `references/hermeshub-publishing.md`.
+
+Release discipline that applies to all of the above:
+
+- Treat user-approved drafts as pre-publish gates, not post-publish cleanup. If something published early, say so plainly, fix the package, and move the release tag only after explicit approval.
+- Validators check durable invariants (frontmatter parses, name/description exist, semver version, protected anchors, required reference files and safety phrases), not one-off pinned versions or commits.
+- Trigger verification needs positive and negative evidence: one natural anchor phrase that selects the skill and one adjacent near-miss that must not. A forced `--skills <name>` load is not trigger-selection proof.
+- Keep public repos generic — no deployment paths, personal names, hostnames, or private project names — and scan the working tree plus reachable Git history before flipping visibility to public.
 
 ## Pitfalls
 
@@ -139,16 +131,14 @@ For private repositories for locally maintained/custom skills, use `references/p
 - In containerized runtimes, confirm the resolved active-profile skills directory is on persistent storage before installing. A persistent source checkout does not protect copied skills if the install destination lives on an ephemeral image layer.
 - GitHub API rate limits and web `tree/` pages can break source acquisition. Authenticate repeated GitHub requests and clone/fetch repositories instead of scraping `tree/` URLs.
 - Do not enable optional shell-execution features just because a ported skill contains shell snippets; surface that to the user as a trust decision.
-- Never embed private scrub terms in a public validator; the denylist is itself a disclosure. Source them from CI secrets, print a loaded-pattern count so empty secrets are visible, and make failure output say only that a private pattern matched. See `references/public-repo-privacy-scrub.md`.
-- Do not allow any public installable package content (`SKILL.md`, `references/`, `templates/`, `scripts/`, or `assets/`) to drift without a release bump. Compare the full skill directory against the semver-highest tag (not graph-nearest `git describe`), and if anything changed require `current_version > tagged_version`; same-version edits and downgrades must fail. See `references/public-skill-release-gates.md`.
-- Do not confuse distribution targets: "Hermes Skill Hub" / "HermesHub" means the Hub repo/listing path (`amanning3390/hermeshub` at time of writing), while main-repo optional skill inclusion means `NousResearch/hermes-agent`. If the wrong PR is opened, close it, delete the fork branch if safe, and submit to the intended target. See `references/hermeshub-publishing.md`.
+- Never embed private scrub terms in a public validator; the denylist is itself a disclosure (`references/public-repo-privacy-scrub.md`).
+- Do not let installable package content drift without a version bump; diff the full skill directory against the semver-highest tag (`references/public-skill-release-gates.md`).
+- Do not confuse Hub publication with `NousResearch/hermes-agent` bundled inclusion; if the wrong PR is opened, close it and resubmit to the intended target (`references/hermeshub-publishing.md`).
 - Do not split this skill's future critical workflow docs into support files unless the documented install path fetches a full skill directory.
 
 ## Change ledger
 
-- **2.2.9** — Added `metadata.hermes.repository` pointing to `https://github.com/vcolombo/port-skill-collection` so Hermes config backup can classify the skill as source-backed instead of at-risk.
-- **2.2.8** — Added private custom skill repository workflow and `references/private-custom-skill-repos.md`: classify hub/external vs locally maintained skills, publish one private repo per selected skill, verify privacy/branch/secret/size checks, and update the config backup repo with an inventory instead of duplicating skill source.
-- **2.2.1–2.2.7** — Consolidated previously published local maintenance history into the source repo: trigger-anchor preservation, safety CI/release gates, Gitleaks/CodeQL/Dependabot updates, public privacy-scrub safeguards, and version-bump enforcement for package changes.
+- **2.3.0** — Added publishing trigger phrases to the description; condensed the publishing section and pitfalls to reference pointers to cut per-session context cost; genericized `references/private-custom-skill-repos.md`. Pre-2.3 history lives in the repository `CHANGELOG.md`.
 
 ## Done means
 
