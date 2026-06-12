@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-skill-package:
     name: Validate Hermes skill package
@@ -31,6 +35,10 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: NousResearch/hermes-agent
+          # Pin the scanner to a reviewed commit; bump deliberately. Unpinned
+          # HEAD means upstream pushes run unreviewed code in this repo's CI.
+          # Update with: git ls-remote https://github.com/NousResearch/hermes-agent HEAD
+          ref: 24f74eb88853162899fe345dc34a9c5a20f66657
           path: .ci/hermes-agent
 
       - name: Run package validator and Hermes skill scanner
@@ -51,9 +59,12 @@ jobs:
       - name: Install Gitleaks
         env:
           GITLEAKS_VERSION: "8.24.3"
+          # sha256 of gitleaks_8.24.3_linux_x64.tar.gz from the official release checksums.txt
+          GITLEAKS_SHA256: "9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c"
         run: |
           set -euo pipefail
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tgz
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tgz" | sha256sum -c -
           tar -xzf /tmp/gitleaks.tgz -C /tmp gitleaks
           install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version

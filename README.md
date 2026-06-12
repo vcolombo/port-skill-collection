@@ -53,12 +53,17 @@ Installed skills appear in new sessions after prompt/cache refresh.
 - `skills/port-skill-collection/SKILL.md` — the Hermes skill.
 - `skills/port-skill-collection/references/refresh-mode.md` — refresh workflow details.
 - `skills/port-skill-collection/references/ports-ledger.md` — `ports.yaml` schema and update rules.
+- `skills/port-skill-collection/references/hermeshub-publishing.md` — Hermes Skill Hub publication target discipline.
+- `skills/port-skill-collection/references/private-custom-skill-repos.md` — private repos for locally maintained skills.
+- `skills/port-skill-collection/references/public-repo-privacy-scrub.md` — CI privacy-scrub pattern for public repos.
+- `skills/port-skill-collection/references/public-skill-release-gates.md` — clean-install and version-bump release gates.
 - `skills/port-skill-collection/templates/ports.yaml` — starter ledger template.
 - `skills/port-skill-collection/LICENSE` — license copy included with full-directory installs.
 - `scripts/validate_skill_repo.py` — package validator and Hermes `skills_guard` bridge for CI.
 - `.github/workflows/skill-safety.yml` — GitHub Actions workflow for structure validation, Hermes skill scanning, and Gitleaks secret scanning.
 - `.github/workflows/codeql.yml` — GitHub CodeQL code scanning for repository scripts.
 - `.github/dependabot.yml` — weekly dependency updates for GitHub Actions.
+- `CHANGELOG.md` — full skill package history (the in-package change ledger keeps only the current release).
 - `README.md` — this public installation note.
 - `LICENSE` — repository MIT license.
 
